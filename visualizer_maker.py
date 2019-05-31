@@ -10,19 +10,12 @@ def main():
 # Imports
 # ----------------------------------------------
 import Draft
+import Points
 from datetime import datetime
-from multiprocessing.pool import ThreadPool
-import multiprocessing
 # ----------------------------------------------
 
 
 start_time = datetime.now()
-
-def apply(point):
-    r,g,b = (1.,0.,0.)
-    size = 5
-    x,y,z = point
-    Draft.makePoint(x,y,z,(r,g,b),point_size=size)
 
 points = [\n'''
 
@@ -32,8 +25,10 @@ points = [\n'''
     point_file.write(point_file_header)
     with open(file_path, 'r') as f:
         for data in f:
-            splited_data = data.split('\t')
-            *_, x,y,z, _ = splited_data
+            index_start = len(data) - data[::-1].find(':')
+            index_end = data.find('[')
+            x,y,z= data[index_start:index_end].replace(' ', '').split(',')
+
             point = (x,y,z)
             if 'x' in point:
                 continue
@@ -47,12 +42,22 @@ points = [\n'''
     processing = '''
 
 # ----------------------------------------------
-# Multiprocessing
+# Cloud
 # ----------------------------------------------
-multiprocessing.freeze_support()
-pool = ThreadPool(processes=16)
-pool.map(apply, points)
+cloud = Points.Points()
+cloud.addPoints(points)
 # ----------------------------------------------
+
+# ----------------------------------------------
+# View
+# ----------------------------------------------
+obj=App.ActiveDocument.addObject("Points::Feature")
+obj.Points=cloud
+App.ActiveDocument.recompute()
+obj.ViewObject.PointSize=3.0
+obj.ViewObject.ShapeColor=(1.,0.,0.)
+# ----------------------------------------------
+
 
 term_time = datetime.now()
 print('Term Time {}'.format(str(term_time - start_time)))
